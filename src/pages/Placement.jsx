@@ -1,171 +1,75 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Briefcase, MapPin, DollarSign, Clock, Building, Search, Upload } from 'lucide-react';
-
-import { PlacementService } from '../services/placement';
-import { useAuth } from '../context/AuthContext';
+import React from 'react';
+import { Lock, Briefcase, TrendingUp, Building2, UserCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Placement = () => {
-    const { currentUser } = useAuth();
-    const [jobs, setJobs] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    React.useEffect(() => {
-        const fetchJobs = async () => {
-            try {
-                const data = await PlacementService.getAllJobs();
-                if (data.length === 0) {
-                    setJobs([
-                        {
-                            id: 1,
-                            role: 'React Frontend Developer',
-                            company: 'TechCorp Solutions',
-                            location: 'Bangalore, India',
-                            type: 'Full-time',
-                            salary: '₹6L - ₹12L',
-                            posted: '2 days ago',
-                            skills: ['React', 'Redux', 'Tailwind']
-                        },
-                        {
-                            id: 2,
-                            role: 'Node.js Backend Intern',
-                            company: 'Innovate Startup',
-                            location: 'Remote',
-                            type: 'Internship',
-                            salary: '₹15k - ₹25k / mo',
-                            posted: '5 hours ago',
-                            skills: ['Node.js', 'Express', 'MongoDB']
-                        },
-                        {
-                            id: 3,
-                            role: 'Full Stack Developer',
-                            company: 'Global Systems',
-                            location: 'Chennai, India',
-                            type: 'Full-time',
-                            salary: '₹8L - ₹15L',
-                            posted: '1 week ago',
-                            skills: ['MERN', 'AWS', 'Docker']
-                        }
-                    ]);
-                } else {
-                    setJobs(data);
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchJobs();
-    }, []);
-
-    const handleApply = async (job) => {
-        if (!currentUser) {
-            alert("Please login to apply");
-            return;
-        }
-        // In a real app show a modal or navigate to form
-        try {
-            await PlacementService.applyForJob({
-                jobId: job.id,
-                userId: currentUser.uid,
-                jobRole: job.role,
-                company: job.company
-            });
-            alert("Application Submitted successfully!");
-        } catch (e) {
-            alert("Failed to apply");
-        }
-    };
-
     return (
-        <div className="min-h-screen pt-24 pb-20 px-4 bg-slate-50">
-            <div className="max-w-6xl mx-auto">
-                {/* Header */}
+        <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-white">
+            <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-16">
-                    <span className="inline-block py-1 px-3 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 font-semibold text-sm mb-4">
-                        💼 Career Opportunities
+                    <span className="inline-block py-1 px-3 rounded-full bg-purple-50 text-purple-600 font-bold text-xs uppercase tracking-widest mb-4">
+                        Career Command Center
                     </span>
-                    <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">Placement Hub</h1>
-                    <p className="text-xl text-slate-500 max-w-2xl mx-auto">
-                        Exclusive job openings for Averqon Learn students. Get hired by top companies.
+                    <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6">
+                        Placement <span className="text-purple-600">Hub</span>
+                    </h1>
+                    <p className="text-slate-500 text-lg max-w-2xl mx-auto">
+                        Connect with top recruiters, track applications, and manage high-velocity hiring drives from a single dashboard.
                     </p>
                 </div>
 
-                {/* Search & Upload */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-12 shadow-sm">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1 relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Search by role, company, or skill..."
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors"
-                            />
-                        </div>
-                        <button className="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-primary/20 whitespace-nowrap">
-                            Find Jobs
-                        </button>
-                    </div>
-                </div>
-
-                {/* Job List */}
-                <div className="space-y-6">
-                    {jobs.map((job) => (
-                        <motion.div
-                            key={job.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-white border border-slate-200 hover:border-primary/30 rounded-2xl p-6 md:p-8 transition-all hover:bg-slate-50 group shadow-sm"
-                        >
-                            <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
-                                <div>
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-2 group-hover:text-primary transition-colors">
-                                        {job.role}
-                                    </h3>
-                                    <div className="flex items-center gap-2 text-slate-500 mb-4 font-medium">
-                                        <Building size={16} />
-                                        <span>{job.company}</span>
-                                        <span className="mx-2 text-slate-200">•</span>
-                                        <MapPin size={16} />
-                                        <span>{job.location}</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 mb-4">
-                                        {job.skills.map((skill, i) => (
-                                            <span key={i} className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs text-slate-600">
-                                                {skill}
-                                            </span>
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center gap-6 text-sm text-slate-400">
-                                        <div className="flex items-center gap-1.5">
-                                            <DollarSign size={16} className="text-emerald-500" />
-                                            <span className="text-slate-600">{job.salary}</span>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
+                    <div className="order-2 lg:order-1 relative">
+                        <div className="absolute inset-0 bg-purple-100 rounded-[3rem] transform rotate-3" />
+                        <div className="relative bg-white border border-slate-200 rounded-[3rem] p-10 shadow-2xl overflow-hidden">
+                            {/* Mock Grid */}
+                            <div className="space-y-6 opacity-40 filter blur-[1px]">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <div className="w-12 h-12 bg-slate-200 rounded-lg" />
+                                        <div className="flex-1">
+                                            <div className="h-4 w-32 bg-slate-200 rounded mb-2" />
+                                            <div className="h-3 w-20 bg-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Briefcase size={16} className="text-blue-500" />
-                                            <span className="text-slate-600">{job.type}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Clock size={16} />
-                                            <span>{job.posted}</span>
-                                        </div>
+                                        <div className="h-8 w-24 bg-purple-100 rounded-lg" />
                                     </div>
-                                </div>
-                                <div className="flex flex-row md:flex-col gap-3 min-w-[140px]">
-                                    <button
-                                        onClick={() => handleApply(job)}
-                                        className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-primary/20"
-                                    >
-                                        Apply Now
-                                    </button>
-                                    <button className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold py-3 px-6 rounded-xl transition-all">
-                                        Details
-                                    </button>
-                                </div>
+                                ))}
                             </div>
-                        </motion.div>
-                    ))}
+
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center">
+                                <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-4 text-purple-600">
+                                    <Lock size={32} />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 mb-2">Restricted Access</h3>
+                                <p className="text-slate-500 mb-6 text-sm">
+                                    Placement drives, salary insights, and recruiter connections are confidential and securely accessible only to verified students and TPOs.
+                                </p>
+                                <Link to="/login" className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl shadow-lg hover:bg-purple-700 transition-all">
+                                    Login to Portal
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="order-1 lg:order-2">
+                        <div className="space-y-8">
+                            {[
+                                { t: "Recruitment Drives", d: "Exclusive access to on-campus & off-campus drives.", i: Building2 },
+                                { t: "Application Tracking", d: "Real-time updates on your interview status.", i: TrendingUp },
+                                { t: "Profile Verification", d: "Verified academic and skill records for recruiters.", i: UserCheck },
+                            ].map((feat, i) => (
+                                <div key={i} className="flex gap-5">
+                                    <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
+                                        <feat.i size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-900 mb-2">{feat.t}</h3>
+                                        <p className="text-slate-500 leading-relaxed">{feat.d}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
