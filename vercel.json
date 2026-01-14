@@ -2,10 +2,7 @@
     "version": 2,
     "rewrites": [
         {
-            "handle": "filesystem"
-        },
-        {
-            "source": "/(.*)",
+            "source": "/((?!api/|assets/|.*\\..*).*)",
             "destination": "/index.html"
         }
     ],
