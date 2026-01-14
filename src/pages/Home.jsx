@@ -88,8 +88,10 @@ const Home = () => {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.5 }}
+                            className="flex flex-col items-center mb-8"
                         >
-                            <span className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-slate-900 text-white font-bold text-xs mb-8 tracking-widest uppercase">
+                            <img src="/logo_campus_os.png" alt="Averqon Campus OS" className="w-24 h-24 object-contain mb-6 drop-shadow-xl" />
+                            <span className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-slate-900 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-slate-900/20">
                                 <Zap size={14} className="text-yellow-400" /> Introducing Averqon Campus OS
                             </span>
                         </motion.div>
