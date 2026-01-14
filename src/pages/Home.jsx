@@ -3,7 +3,7 @@ import {
     ArrowRight, CheckCircle2, Video, Shield, Cpu,
     Users, GraduationCap, Building2, Briefcase,
     Bot, Database, LayoutDashboard, Zap,
-    ArrowUpRight, Globe, Layers, ScrollText, CheckCircle
+    ArrowUpRight, Globe, Layers, ScrollText, CheckCircle, Target
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
