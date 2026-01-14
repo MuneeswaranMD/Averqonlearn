@@ -4,13 +4,13 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAWNwA5QGBug-3EknweIASBITfT9vM2lfU",
-  authDomain: "munees-ed613.firebaseapp.com",
-  projectId: "munees-ed613",
-  storageBucket: "munees-ed613.firebasestorage.app",
-  messagingSenderId: "61722437820",
-  appId: "1:61722437820:web:99986341830e8dcf42c8b9",
-  measurementId: "G-275EL3FT2V"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
