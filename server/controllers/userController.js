@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Batch = require('../models/Batch');
 
 // @desc    Get users by role
 // @route   GET /api/users/role/:role
@@ -9,6 +10,22 @@ const getUsersByRole = async (req, res) => {
 
     const query = { role };
     if (collegeId) query.collegeId = collegeId;
+
+    // Strict Filtering: If requester is a Faculty, ONLY show students from their assigned batches
+    if (req.user && req.user.role === 'faculty' && role === 'student') {
+        const myBatches = await Batch.find({ 
+            collegeId, 
+            facultyIds: req.user._id,
+            isActive: true 
+        });
+
+        const allowedStudentIds = myBatches.reduce((acc, batch) => {
+            return acc.concat(batch.studentIds);
+        }, []);
+
+        // Flatten and unique
+        query._id = { $in: [...new Set(allowedStudentIds)] };
+    }
 
     const users = await User.find(query);
     res.json(users);
@@ -38,6 +55,35 @@ const addUser = async (req, res) => {
         year,
         rollNo
     });
+
+    // Auto-assign to batches based on Dept and Year
+    if (user && role === 'student' && collegeId) {
+        try {
+            const query = { collegeId, isActive: true };
+            
+            // Create flexible regex queries if dept/year are provided
+            if (dept) {
+                // Matches "CSE", "cse", "CSE Dept", "Computer Science", etc. roughly
+                // Use a simple partial match or exact case-insensitive match
+                query.department = { $regex: new RegExp(dept, 'i') }; 
+            }
+            if (year) {
+                // Matches "1", "1st", "Year 1", etc.
+                // Just use Regex for partial because formats widely vary
+                query.year = { $regex: new RegExp(year, 'i') };
+            }
+
+            // Only run if at least dept or year is present to avoid adding to "all-batch" accidentally
+            if (dept || year) {
+                await Batch.updateMany(
+                    query,
+                    { $addToSet: { studentIds: user._id } }
+                );
+            }
+        } catch (err) {
+            console.error("Error auto-assigning student to batch:", err);
+        }
+    }
 
     res.status(201).json(user);
 };

@@ -65,5 +65,10 @@ export const AuthService = {
   getMe: async () => {
     const response = await api.get('/auth/me');
     return response.data;
+  },
+
+  updateSettings: async (settings) => {
+    const response = await api.put('/auth/settings', settings);
+    return response.data;
   }
 };

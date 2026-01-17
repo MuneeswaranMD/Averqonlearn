@@ -1,43 +1,115 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 20s linear infinite;
-}
-
 @layer base {
+  :root {
+    --primary: 79, 71, 230;
+    --primary-start: #4F47E6;
+    --primary-end: #6D67FF;
+    /* Vibrant Logo Blue/Indigo */
+    --background: 248, 250, 252;
+    /* Slate 50 */
+    --card: 255, 255, 255;
+    --text-primary: 15, 23, 42;
+    /* Slate 900 */
+    --text-secondary: 100, 116, 139;
+    /* Slate 500 */
+    --border: 226, 232, 240;
+    /* Slate 200 */
+  }
+
+  .dark {
+    --primary: 99, 102, 241;
+    /* Slightly brighter for dark mode */
+    --background: 8, 10, 15;
+    /* Even deeper dark for premium feel */
+    --card: 15, 23, 42;
+    /* Slate 900 */
+    --text-primary: 241, 245, 249;
+    /* Slate 100 */
+    --text-secondary: 148, 163, 184;
+    /* Slate 400 */
+    --border: 30, 41, 59;
+    /* Slate 800 */
+  }
+
   body {
-    @apply bg-background text-text-primary font-sans antialiased;
+    @apply bg-[rgb(var(--background))] text-[rgb(var(--text-primary))] font-sans antialiased transition-colors duration-300;
   }
 }
 
-/* Custom Scrollbar for simple feel */
-::-webkit-scrollbar {
-  width: 8px;
+@layer components {
+  .card-main {
+    @apply bg-card rounded-[1.5rem] border border-border p-8 shadow-premium-card hover:shadow-premium-card-hover hover:-translate-y-1 transition-all duration-500 relative overflow-hidden;
+  }
+
+  /* Sophisticated card highlight */
+  .card-main::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[rgb(var(--primary))]/20 to-transparent;
+  }
+
+  .input-primary {
+    @apply w-full bg-[rgb(var(--background))] border border-[rgb(var(--border))] rounded-2xl px-6 py-4 text-sm font-black text-[rgb(var(--text-primary))] placeholder:text-[rgb(var(--text-secondary))] outline-none ring-0 focus:ring-2 focus:ring-[rgb(var(--primary))]/20 transition-all uppercase tracking-widest;
+  }
+
+  .btn-primary {
+    @apply px-10 py-5 bg-[rgb(var(--primary))] text-white font-black rounded-[1.5rem] shadow-premium-btn hover:shadow-premium-btn-hover hover:brightness-110 active:scale-95 transition-all text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 border-none;
+  }
+
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-xl;
+  }
+
+  .brand-glow {
+    @apply shadow-[0_0_20px_rgba(var(--primary), 0.3)] border-[rgba(var(--primary), 0.2)];
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #F1F5F9;
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 4px;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(var(--border));
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--text-secondary));
+}
+
+/* Subtle bounce animation */
+@keyframes bounce-subtle {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 3s infinite ease-in-out;
+}
+
+.dashboard-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8;
+}
+
+::selection {
+  @apply bg-[rgb(var(--primary))]/20 text-[rgb(var(--primary))];
 }

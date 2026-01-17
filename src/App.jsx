@@ -15,12 +15,18 @@ import About from './pages/About';
 import Profile from './pages/Profile';
 import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import AITutor from './components/common/AITutor';
+import { ThemeProvider } from './context/ThemeContext';
 
 const AppContent = () => {
   const location = useLocation();
   const isAuthOrDashboard = location.pathname.startsWith('/dashboard') ||
     location.pathname.startsWith('/admin') ||
-    location.pathname.startsWith('/login');
+    location.pathname.startsWith('/login') ||
+    location.pathname.startsWith('/test');
+
+  const isAuthPage = location.pathname.startsWith('/login') || location.pathname.startsWith('/register');
+  const isTestPage = location.pathname.startsWith('/test');
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-text-primary font-sans selection:bg-primary/30">
@@ -51,6 +57,7 @@ const AppContent = () => {
         </Routes>
       </main>
       {!isAuthOrDashboard && <Footer />}
+      {!isAuthPage && !isTestPage && <AITutor />}
     </div>
   );
 };
@@ -58,11 +65,13 @@ const AppContent = () => {
 function App() {
   return (
     <AuthProvider>
-      <ErrorBoundary>
-        <Router>
-          <AppContent />
-        </Router>
-      </ErrorBoundary>
+      <ThemeProvider>
+        <ErrorBoundary>
+          <Router>
+            <AppContent />
+          </Router>
+        </ErrorBoundary>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

@@ -41,7 +41,7 @@ const Results = () => {
     ];
 
     const stats = [
-        { label: 'Overall CGPA', value: '8.45', icon: Target, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        { label: 'Overall CGPA', value: '8.45', icon: Target, color: 'text-primary', bg: 'bg-primary/10' },
         { label: 'Total Credits', value: '142', icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-50' },
         { label: 'Arrears (Active)', value: '0', icon: Award, color: 'text-orange-600', bg: 'bg-orange-50' },
     ];
@@ -80,7 +80,7 @@ const Results = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* GPA Trend Chart */}
-                <div className="lg:col-span-2 bg-slate-900 rounded-[32px] p-8 text-white shadow-xl shadow-slate-200">
+                <div className="lg:col-span-2 col-span-1 min-w-0 bg-slate-900 rounded-[32px] p-8 text-white shadow-xl shadow-slate-200">
                     <div className="flex items-center justify-between mb-10">
                         <div>
                             <h3 className="text-xl font-bold mb-1">GPA Performance Trend</h3>
@@ -95,8 +95,8 @@ const Results = () => {
                             <AreaChart data={performanceData}>
                                 <defs>
                                     <linearGradient id="colorGpa" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#4F47E6" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="#4F47E6" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="rgb(var(--primary))" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="rgb(var(--primary))" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff10" />
@@ -105,7 +105,7 @@ const Results = () => {
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#1e293b', borderRadius: '16px', border: '1px solid #334155', color: '#fff' }}
                                 />
-                                <Area type="monotone" dataKey="gpa" stroke="#4F47E6" strokeWidth={4} fillOpacity={1} fill="url(#colorGpa)" />
+                                <Area type="monotone" dataKey="gpa" stroke="rgb(var(--primary))" strokeWidth={4} fillOpacity={1} fill="url(#colorGpa)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>

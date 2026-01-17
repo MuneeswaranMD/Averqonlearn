@@ -10,17 +10,19 @@ export const StudentService = {
     },
 
     // Course Content
-    getContent: async (subjectId) => {
+    getContent: async (params) => {
+        // params can be { subjectId, type, collegeId }
         const response = await api.get('/academic/content', {
-            params: { subjectId }
+            params
         });
         return response.data;
     },
 
     // Results & Assessments
-    getExamResults: async (studentId) => {
-        // Placeholder for initial migration
-        return [];
+    // Results & Assessments
+    getResults: async (studentId) => {
+        const response = await api.get('/exams/results');
+        return response.data;
     },
 
     // Placement Stats

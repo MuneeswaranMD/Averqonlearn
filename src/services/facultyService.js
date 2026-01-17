@@ -9,6 +9,16 @@ export const FacultyService = {
         return response.data;
     },
 
+    createSubject: async (data) => {
+        const response = await api.post('/academic/subjects', data);
+        return response.data;
+    },
+
+    getBatches: async () => {
+        const response = await api.get('/batches'); // Backend filters by collegeId
+        return response.data;
+    },
+
     // Get students in a subject
     getSubjectStudents: async (collegeId, dept) => {
         const response = await api.get('/users/role/student', {
@@ -32,6 +42,21 @@ export const FacultyService = {
 
     deleteContent: async (id) => {
         const response = await api.delete(`/academic/content/${id}`);
+        return response.data;
+    },
+
+    updateContent: async (id, data) => {
+        const response = await api.put(`/academic/content/${id}`, data);
+        return response.data;
+    },
+
+    updateSubject: async (id, data) => {
+        const response = await api.put(`/academic/subjects/${id}`, data);
+        return response.data;
+    },
+
+    deleteSubject: async (id) => {
+        const response = await api.delete(`/academic/subjects/${id}`);
         return response.data;
     },
 

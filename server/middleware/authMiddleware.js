@@ -2,22 +2,28 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const protect = async (req, res, next) => {
-    let token;
-
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        try {
-            token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'averqon_secret_key');
-            req.user = await User.findById(decoded.id).select('-password');
+    try {
+        // AUTH OVERRIDE: Fetch the first available user (Development Mode)
+        // This fulfills the request to "remove JWT" for testing.
+        const user = await User.findOne({});
+        
+        if (user) {
+            req.user = user;
             next();
-        } catch (error) {
-            console.error(error);
-            res.status(401).json({ message: 'Not authorized, token failed' });
+        } else {
+            // Create a dummy user if DB is empty
+            const dummyUser = await User.create({
+                name: 'Dev User',
+                email: 'dev@averqon.com',
+                password: 'password123',
+                role: 'student'
+            });
+            req.user = dummyUser;
+            next();
         }
-    }
-
-    if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
+    } catch (error) {
+        console.error("Auth Override Error:", error);
+        res.status(500).json({ message: 'Auth Error' });
     }
 };
 

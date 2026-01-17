@@ -13,17 +13,44 @@ const VideoClasses = () => {
         const fetchVideos = async () => {
             if (!collegeId) return;
             try {
-                const data = await StudentService.getContent(collegeId, 'video');
+                // Students see only content assigned to their subjects/batches
+                const data = await StudentService.getContent({ type: 'video' });
                 setVideos(data);
             } catch (error) { console.error(error); } finally { setLoading(false); }
         };
         fetchVideos();
     }, [collegeId]);
 
-    const filtered = videos.filter(v => v.title?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const [selectedVideo, setSelectedVideo] = useState(null);
+
+    const getYouTubeThumbnail = (url) => {
+        if (!url) return "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800";
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11)
+            ? `https://img.youtube.com/vi/${match[2]}/maxresdefault.jpg`
+            : "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800";
+    };
+
+    const getYouTubeEmbedUrl = (url) => {
+        if (!url) return '';
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : url;
+    };
+
+    const VideoPlayer = ({ video, onClose }) => (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="w-full max-w-5xl aspect-video bg-black rounded-3xl overflow-hidden relative border border-white/10 shadow-2xl">
+                <button onClick={onClose} className="absolute top-6 right-6 z-20 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md"><X size={24} /></button>
+                <iframe src={getYouTubeEmbedUrl(video.url)} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+            </div>
+        </div>
+    );
 
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+            {selectedVideo && <VideoPlayer video={selectedVideo} onClose={() => setSelectedVideo(null)} />}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
                     <h1 className="text-4xl font-black text-slate-900 tracking-tight">Stream <span className="text-primary italic">OS</span></h1>
@@ -46,15 +73,15 @@ const VideoClasses = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 {filtered.map(v => (
-                    <div key={v.id} className="group relative bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500">
+                    <div key={v._id || v.id} className="group relative bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500">
                         <div className="aspect-video relative bg-slate-900 overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent opacity-60" />
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 cursor-pointer" onClick={() => setSelectedVideo(v)}>
                                 <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white scale-75 group-hover:scale-100 transition-transform duration-500">
                                     <Play fill="currentColor" size={24} />
                                 </div>
                             </div>
-                            <img src={`https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop`} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" />
+                            <img src={getYouTubeThumbnail(v.url)} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" />
                             <div className="absolute top-4 left-4 flex gap-2">
                                 <span className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-[10px] font-black text-white uppercase tracking-widest">Recorded</span>
                             </div>
@@ -62,22 +89,22 @@ const VideoClasses = () => {
                         <div className="p-8">
                             <div className="flex items-center gap-2 mb-4">
                                 <div className="p-2 bg-primary/5 text-primary rounded-lg"><Layers size={14} /></div>
-                                <span className="text-[10px] items-center font-black uppercase text-slate-400 tracking-widest">{v.unit || 'Standard'} • {v.dept || 'GenEd'}</span>
+                                <span className="text-[10px] items-center font-black uppercase text-slate-400 tracking-widest">{v.subjectId?.title || 'Core'} • {v.unit || 'Unit 1'}</span>
                             </div>
                             <h3 className="text-xl font-bold text-slate-900 mb-2 leading-tight group-hover:text-primary transition-colors">{v.title}</h3>
                             <p className="text-sm text-slate-500 line-clamp-2 mb-8 font-medium italic">"{v.description || 'Deep dive lecture into advanced concepts.'}"</p>
 
                             <div className="flex items-center justify-between pt-6 border-t border-slate-50">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-black text-[10px]">AI</div>
+                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-black text-[10px]">OS</div>
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] font-black text-slate-900">Dr. {userData?.collegeName?.split(' ')[0]} Bot</span>
+                                        <span className="text-[10px] font-black text-slate-900">Academic Cloud</span>
                                         <span className="text-[9px] font-bold text-emerald-500 uppercase">Ready for QA</span>
                                     </div>
                                 </div>
-                                <a href={v.url} target="_blank" className="p-3 bg-slate-900 text-white rounded-2xl group-hover:bg-primary transition-all shadow-lg shadow-slate-900/10">
+                                <button onClick={() => setSelectedVideo(v)} className="p-3 bg-slate-900 text-white rounded-2xl group-hover:bg-primary transition-all shadow-lg shadow-slate-900/10">
                                     <PlayCircle size={20} />
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>

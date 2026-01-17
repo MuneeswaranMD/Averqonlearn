@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export const UserService = {
   // GET user profile

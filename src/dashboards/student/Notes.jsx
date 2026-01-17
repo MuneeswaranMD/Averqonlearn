@@ -17,7 +17,7 @@ const Notes = () => {
         const fetchNotes = async () => {
             if (!collegeId) return;
             try {
-                const data = await StudentService.getContent(collegeId, 'note');
+                const data = await StudentService.getContent({ collegeId, type: 'note' });
                 setNotes(data);
             } catch (error) { console.error(error); } finally { setLoading(false); }
         };
@@ -97,7 +97,7 @@ const Notes = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {filtered.map(file => (
-                                        <tr key={file.id} className="hover:bg-slate-50/30 transition-all group">
+                                        <tr key={file._id || file.id} className="hover:bg-slate-50/30 transition-all group">
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-5">
                                                     <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-sm">
@@ -108,21 +108,21 @@ const Notes = () => {
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Asset v1.2</span>
                                                             <div className="w-1 h-1 rounded-full bg-slate-200" />
-                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1"><Clock size={10} /> Modified Yesterday</span>
+                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1"><Clock size={10} /> Sync: Online</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-6">
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-black text-slate-900 uppercase tracking-tight">{file.subject || 'Core Academics'}</span>
+                                                    <span className="text-xs font-black text-slate-900 uppercase tracking-tight">{file.subjectId?.title || 'Core Academics'}</span>
                                                     <span className="text-[10px] font-black text-primary uppercase">Cluster: {file.unit || 'Standard'}</span>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6 text-right">
                                                 <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                                                     <button onClick={() => alert('AI Summarization Indexing...')} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all"><BookOpen size={18} /></button>
-                                                    <a href={file.url} target="_blank" className="p-3 bg-slate-900 text-white rounded-xl hover:bg-primary transition-all shadow-lg shadow-slate-900/10"><Download size={18} /></a>
+                                                    <a href={file.url} target="_blank" rel="noreferrer" className="p-3 bg-slate-900 text-white rounded-xl hover:bg-primary transition-all shadow-lg shadow-slate-900/10"><Download size={18} /></a>
                                                 </div>
                                             </td>
                                         </tr>

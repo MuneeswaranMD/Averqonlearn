@@ -11,21 +11,22 @@ import Placements from './student/Placements';
 import Resume from './student/Resume';
 import Certificates from './student/Certificates';
 import Profile from './student/Profile';
+import ProgressTracker from './student/ProgressTracker';
 
 const StudentDashboard = ({ activeTab }) => {
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard': return <StudentOverview />;
             case 'subjects': return <MySubjects />;
-            case 'videos': return <VideoClasses />;
-            case 'notes': return <Notes />;
             case 'ai-tutor': return <AITutor />;
             case 'exams': return <Exams />;
             case 'results': return <Results />;
+            case 'progress': return <ProgressTracker />;
             case 'placements': return <Placements />;
             case 'resume': return <Resume />;
             case 'certificates': return <Certificates />;
             case 'profile': return <Profile />;
+            case 'appearance': return <Appearance />;
             default: return <StudentOverview />;
         }
     };

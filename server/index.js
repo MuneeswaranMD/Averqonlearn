@@ -28,21 +28,13 @@ app.use('/api/colleges', require('./routes/collegeRoutes'));
 app.use('/api/departments', require('./routes/departmentRoutes'));
 app.use('/api/placements', require('./routes/placementRoutes'));
 app.use('/api/academic', require('./routes/academicRoutes'));
+app.use('/api/batches', require('./routes/batchRoutes'));
+app.use('/api/exams', require('./routes/examRoutes'));
+app.use('/api/progress', require('./routes/progressRoutes'));
 
 // AI Route (Existing)
-app.post('/api/ai/ask', async (req, res) => {
-  const { userId, courseId, lessonId, question, context } = req.body;
-  try {
-    const lessonContext = context?.notes || "General React Context";
-    const mockAnswer = `(AI Simulated Response) 
-    Hey there! Great question about ${question}. 
-    Based on the lesson "${lessonId}", here is the explanation...`;
-    res.json({ answer: mockAnswer });
-  } catch (error) {
-    console.error('AI Error:', error);
-    res.status(500).json({ error: 'Failed to get AI response' });
-  }
-});
+// AI Routes
+app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Error Handling
 app.use((err, req, res, next) => {

@@ -40,7 +40,15 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course'
     }],
-    cgpa: Number
+    cgpa: Number,
+    themeId: {
+        type: String,
+        default: 'indigo'
+    },
+    darkMode: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: true
 });

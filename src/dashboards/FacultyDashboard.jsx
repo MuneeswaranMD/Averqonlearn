@@ -9,12 +9,15 @@ import {
     FileUp, FileDown, ChevronLeft, ChevronRight, CheckSquare, Square,
     Mic, Send, Award, Database
 } from 'lucide-react';
+import Appearance from './common/Appearance';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { FacultyService } from '../services/facultyService';
 import { AdminService } from '../services/adminService';
 import { LiveService } from '../services/live';
 import { AssessmentService } from '../services/assessment';
+import { ExamService } from '../services/examService';
+import ExamLibrary from '../components/dashboard/ExamLibrary';
 
 const UserModal = ({ isOpen, onClose, onSave, editingUser, role }) => {
     const [formData, setFormData] = useState({
@@ -78,14 +81,36 @@ const UserModal = ({ isOpen, onClose, onSave, editingUser, role }) => {
     );
 };
 
-const ContentModal = ({ isOpen, onClose, onSave, type }) => {
-    const [formData, setFormData] = useState({ title: '', subject: '', url: '' });
+const ContentModal = ({ isOpen, onClose, onSave, type, subjects, editingContent }) => {
+    const [formData, setFormData] = useState({
+        title: '', subjectId: '', url: '',
+        unit: 'Unit 1', isVisible: true, allowDownload: true
+    });
+
+    useEffect(() => {
+        if (editingContent) {
+            setFormData({
+                title: editingContent.title || '',
+                subjectId: editingContent.subjectId || '',
+                url: editingContent.url || '',
+                unit: editingContent.unit || 'Unit 1',
+                isVisible: editingContent.isVisible !== undefined ? editingContent.isVisible : true,
+                allowDownload: editingContent.allowDownload !== undefined ? editingContent.allowDownload : true
+            });
+        } else {
+            setFormData({
+                title: '', subjectId: '', url: '',
+                unit: 'Unit 1', isVisible: true, allowDownload: true
+            });
+        }
+    }, [editingContent, isOpen]);
+
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95">
+            <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95">
                 <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                    <h2 className="text-xl font-black text-slate-900">Upload {type === 'video' ? 'Lecture' : 'Material'}</h2>
+                    <h2 className="text-xl font-black text-slate-900">{editingContent ? 'Edit' : 'Upload'} {type === 'video' ? 'Lecture' : 'Material'}</h2>
                     <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} /></button>
                 </div>
                 <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="p-8 space-y-4">
@@ -93,17 +118,123 @@ const ContentModal = ({ isOpen, onClose, onSave, type }) => {
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Title</label>
                         <input required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold" />
                     </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Subject</label>
-                        <input required value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold" />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Subject</label>
+                            <select required value={formData.subjectId} onChange={e => setFormData({ ...formData, subjectId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold">
+                                <option value="">Select Subject</option>
+                                {subjects.map(s => (
+                                    <option key={s._id} value={s._id}>{s.title}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Study Unit</label>
+                            <select value={formData.unit} onChange={e => setFormData({ ...formData, unit: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold">
+                                <option>Unit 1</option><option>Unit 2</option><option>Unit 3</option><option>Unit 4</option><option>Unit 5</option>
+                            </select>
+                        </div>
                     </div>
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">{type === 'video' ? 'Video/YouTube Link' : 'Media/PDF Link'}</label>
                         <input required value={formData.url} onChange={e => setFormData({ ...formData, url: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold" />
                     </div>
+                    <div className="flex justify-between pt-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" className="accent-primary w-4 h-4" checked={formData.isVisible} onChange={e => setFormData({ ...formData, isVisible: e.target.checked })} />
+                            <span className="text-xs font-bold text-slate-600">Visible to Students</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" className="accent-primary w-4 h-4" checked={formData.allowDownload} onChange={e => setFormData({ ...formData, allowDownload: e.target.checked })} />
+                            <span className="text-xs font-bold text-slate-600">Allow Download</span>
+                        </label>
+                    </div>
+
                     <div className="pt-4 flex justify-end gap-3">
                         <button type="button" onClick={onClose} className="px-6 py-2.5 bg-slate-50 text-slate-500 font-bold rounded-xl text-sm">Cancel</button>
-                        <button type="submit" className="px-8 py-2.5 bg-primary text-white font-black rounded-xl text-sm shadow-lg shadow-primary/20 flex items-center gap-2"><Upload size={16} /> Publish Now</button>
+                        <button type="submit" className="px-8 py-2.5 bg-primary text-white font-black rounded-xl text-sm shadow-lg shadow-primary/20 flex items-center gap-2">
+                            {editingContent ? <Edit3 size={16} /> : <Upload size={16} />} {editingContent ? 'Update' : 'Publish Now'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const SubjectModal = ({ isOpen, onClose, onSave, batches, editingSubject }) => {
+    const [formData, setFormData] = useState({ title: '', description: '', selectedBatches: [] });
+
+    useEffect(() => {
+        if (editingSubject) {
+            setFormData({
+                title: editingSubject.title || '',
+                description: editingSubject.description || '',
+                dept: editingSubject.dept || '',
+                year: editingSubject.year || '',
+                selectedBatches: editingSubject.batches ? editingSubject.batches.map(b => typeof b === 'object' ? b._id : b) : []
+            });
+        } else {
+            setFormData({ title: '', description: '', dept: '', year: '', selectedBatches: [] });
+        }
+    }, [editingSubject, isOpen]);
+
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                    <h2 className="text-xl font-black text-slate-900">{editingSubject ? 'Edit Subject' : 'Create New Subject'}</h2>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} /></button>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="p-8 space-y-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Subject Title</label>
+                        <input required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold" placeholder="e.g. Advanced Mathematics" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Target Dept</label>
+                            <input value={formData.dept} onChange={e => setFormData({ ...formData, dept: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-sm font-bold" placeholder="CSE" />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Target Year</label>
+                            <select value={formData.year} onChange={e => setFormData({ ...formData, year: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-sm font-bold">
+                                <option value="">Select Year</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Description</label>
+                        <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold" placeholder="Short description..." />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Assign to Batches (Optional)</label>
+                        <div className="max-h-32 overflow-y-auto border border-slate-100 rounded-xl p-2 bg-slate-50 space-y-2">
+                            {batches.map(batch => (
+                                <label key={batch._id} className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        className="accent-primary"
+                                        checked={formData.selectedBatches.includes(batch._id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) setFormData({ ...formData, selectedBatches: [...formData.selectedBatches, batch._id] });
+                                            else setFormData({ ...formData, selectedBatches: formData.selectedBatches.filter(id => id !== batch._id) });
+                                        }}
+                                    />
+                                    <span className="text-xs font-bold text-slate-700">{batch.name}</span>
+                                </label>
+                            ))}
+                            {batches.length === 0 && <div className="text-xs text-slate-400 italic p-2">No specific batches assigned to you.</div>}
+                        </div>
+                    </div>
+                    <div className="pt-4 flex justify-end gap-3">
+                        <button type="button" onClick={onClose} className="px-6 py-2.5 bg-slate-50 text-slate-500 font-bold rounded-xl text-sm">Cancel</button>
+                        <button type="submit" className="px-8 py-2.5 bg-primary text-white font-black rounded-xl text-sm shadow-lg shadow-primary/20">{editingSubject ? 'Update' : 'Create Subject'}</button>
                     </div>
                 </form>
             </div>
@@ -151,10 +282,10 @@ const LiveModal = ({ isOpen, onClose, onSave }) => {
 const FacultyDashboard = ({ activeTab }) => {
     const { currentUser, collegeId, userData } = useAuth();
     const [stats, setStats] = useState([
-        { label: 'Active Students', value: '0', change: '+0%', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Courses Taught', value: '0', change: '0%', icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50' },
-        { label: 'Quiz Completion', value: '0%', change: '+0%', icon: ClipboardList, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-        { label: 'Avg. Test Score', value: '0/100', change: '0%', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
+        { label: 'Active Students', value: '450', change: '+12%', icon: Users, color: '#0f172a' },
+        { label: 'Courses Taught', value: '12', change: '0%', icon: BookOpen, color: '#05cd99' },
+        { label: 'Quiz Completion', value: '85%', change: '+5%', icon: ClipboardList, color: '#ffb547' },
+        { label: 'Avg. Score', value: '78', change: '+2%', icon: TrendingUp, color: '#ee5d50' },
     ]);
 
     const [taughtSubjects, setTaughtSubjects] = useState([]);
@@ -170,8 +301,14 @@ const FacultyDashboard = ({ activeTab }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDept, setFilterDept] = useState('All');
     const [filterYear, setFilterYear] = useState('All');
+    const [filterSubject, setFilterSubject] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 6;
+
+    const [myBatches, setMyBatches] = useState([]);
+    const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
+    const [selectedSubject, setSelectedSubject] = useState(null);
+    const [selectedContent, setSelectedContent] = useState(null);
 
     const fetchData = async () => {
         if (!currentUser || !collegeId) return;
@@ -179,6 +316,9 @@ const FacultyDashboard = ({ activeTab }) => {
         try {
             const subjects = await FacultyService.getTaughtSubjects(currentUser.uid);
             setTaughtSubjects(subjects);
+            const batches = await FacultyService.getBatches();
+            const facultyBatches = batches.filter(b => b.facultyIds.some(f => f._id === currentUser.uid || f === currentUser.uid));
+            setMyBatches(facultyBatches);
 
             if (activeTab === 'students') {
                 const studentList = await AdminService.getUsersByRole(collegeId, 'student');
@@ -193,16 +333,6 @@ const FacultyDashboard = ({ activeTab }) => {
                 const l = await LiveService.getUpcomingClasses();
                 setLiveClasses(l.filter(c => c.instructor === (userData?.displayName || 'Faculty')));
             }
-
-            setStats(prev => prev.map(s => {
-                if (s.label === 'Courses Taught') return { ...s, value: subjects.length.toString() };
-                if (s.label === 'Active Students') {
-                    // If we just fetched students, use that length, else use existing state
-                    const count = (activeTab === 'students' && typeof studentList !== 'undefined') ? studentList.length : students.length;
-                    return { ...s, value: count.toString() };
-                }
-                return s;
-            }));
         } catch (error) {
             console.error("Faculty Data Error:", error);
         } finally {
@@ -234,17 +364,40 @@ const FacultyDashboard = ({ activeTab }) => {
         } catch (err) { console.error(err); }
     };
 
+    const handleSaveSubject = async (formData) => {
+        try {
+            if (selectedSubject) {
+                await FacultyService.updateSubject(selectedSubject._id, {
+                    ...formData,
+                    batches: formData.selectedBatches
+                });
+            } else {
+                await FacultyService.createSubject({
+                    ...formData,
+                    batches: formData.selectedBatches
+                });
+            }
+            setIsSubjectModalOpen(false);
+            setSelectedSubject(null);
+            fetchData();
+        } catch (err) { console.error(err); }
+    };
 
     const handleSaveContent = async (formData) => {
         try {
-            const type = activeTab === 'upload-videos' ? 'video' : 'note';
-            await FacultyService.uploadContent({
-                ...formData,
-                type,
-                facultyId: currentUser.uid,
-                collegeId
-            });
+            if (selectedContent) {
+                await FacultyService.updateContent(selectedContent._id || selectedContent.id, formData);
+            } else {
+                const type = activeTab === 'upload-videos' ? 'video' : 'note';
+                await FacultyService.uploadContent({
+                    ...formData,
+                    type,
+                    facultyId: currentUser.uid,
+                    collegeId
+                });
+            }
             setIsModalOpen(false);
+            setSelectedContent(null);
             fetchData();
         } catch (err) { console.error(err); }
     };
@@ -270,237 +423,222 @@ const FacultyDashboard = ({ activeTab }) => {
         }
     };
 
-    const filteredStudents = students.filter(s => {
-        const matchesSearch = s.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            s.email?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesDept = filterDept === 'All' || s.dept === filterDept;
-        const matchesYear = filterYear === 'All' || s.year === filterYear;
-        return matchesSearch && matchesDept && matchesYear;
-    });
+    const renderStudents = () => {
+        const filteredStudents = students.filter(s => {
+            const matchesSearch = s.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                s.email?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesDept = filterDept === 'All' || s.dept === filterDept;
+            const matchesYear = filterYear === 'All' || s.year === filterYear;
+            return matchesSearch && matchesDept && matchesYear;
+        });
 
-    const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
-    const paginatedStudents = filteredStudents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+        const paginatedStudents = filteredStudents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    const renderStudents = () => (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-                <div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Student Management</h1>
-                    <p className="text-slate-500 font-medium mt-1 uppercase text-[10px] tracking-widest text-primary font-black">Total Active: {filteredStudents.length}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <button onClick={() => { setSelectedUser(null); setIsUserModalOpen(true); }} className="px-6 py-2 bg-primary text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-primary/20">
-                        <Plus size={16} /> Add Student
-                    </button>
-                    <button onClick={() => AdminService.exportToCSV(students, 'Faculty_Students')} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold text-slate-600 flex items-center gap-2 uppercase tracking-widest">
-                        <FileDown size={16} /> Export
+        return (
+            <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-extrabold text-dark tracking-tight">Student Directory</h2>
+                    <button onClick={() => { setSelectedUser(null); setIsUserModalOpen(true); }} className="btn-primary">
+                        <Plus size={18} /> New Student
                     </button>
                 </div>
-            </div>
 
-            <div className="bg-white border border-slate-200 rounded-[2.5rem] p-6 shadow-sm flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Search by name or email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:border-primary transition-all text-sm font-medium"
-                    />
-                </div>
-                <div className="flex gap-2">
-                    <select
-                        value={filterDept}
-                        onChange={(e) => setFilterDept(e.target.value)}
-                        className="px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-slate-600 font-bold text-sm outline-none cursor-pointer"
-                    >
-                        <option value="All">All Departments</option>
-                        <option value="CSE">CSE</option>
-                        <option value="IT">IT</option>
-                        <option value="ECE">ECE</option>
-                        <option value="EEE">EEE</option>
-                        <option value="MECH">MECH</option>
-                    </select>
-                    <select
-                        value={filterYear}
-                        onChange={(e) => setFilterYear(e.target.value)}
-                        className="px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-slate-600 font-bold text-sm outline-none cursor-pointer"
-                    >
-                        <option value="All">All Years</option>
-                        <option value="1">1st Year</option>
-                        <option value="2">2nd Year</option>
-                        <option value="3">3rd Year</option>
-                        <option value="4">4th Year</option>
-                    </select>
-                </div>
-                {selectedIds.length > 0 && (
-                    <button onClick={async () => { if (window.confirm(`Delete ${selectedIds.length} students?`)) { await AdminService.deleteMultipleUsers(selectedIds); setSelectedIds([]); fetchData(); } }} className="px-6 py-3 bg-red-50 text-red-600 border border-red-100 rounded-2xl text-sm font-black flex items-center gap-2">
-                        <Trash2 size={18} /> Delete Selected ({selectedIds.length})
-                    </button>
-                )}
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm">
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50/50 text-[10px] uppercase font-black text-slate-400 tracking-widest border-b border-slate-100">
-                        <tr>
-                            <th className="px-8 py-6 w-12"><input type="checkbox" onChange={e => setSelectedIds(e.target.checked ? paginatedStudents.map(s => s.id) : [])} checked={paginatedStudents.length > 0 && paginatedStudents.every(s => selectedIds.includes(s.id))} className="accent-primary" /></th>
-                            <th className="px-4 py-6">Student Information</th>
-                            <th className="px-6 py-6">Dept & Year</th>
-                            <th className="px-8 py-6 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {paginatedStudents.map((s) => (
-                            <tr key={s.id} className="hover:bg-slate-50/50 group transition-colors">
-                                <td className="px-8 py-6"><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => setSelectedIds(prev => prev.includes(s.id) ? prev.filter(i => i !== s.id) : [...prev, s.id])} className="accent-primary" /></td>
-                                <td className="px-4 py-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-400">{s.displayName?.charAt(0)}</div>
-                                        <div>
-                                            <p className="font-bold text-slate-900 group-hover:text-primary transition-colors">{s.displayName}</p>
-                                            <p className="text-[10px] text-slate-400 font-bold">{s.email}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-6 font-bold text-slate-500">
-                                    <div className="flex flex-col">
-                                        <span className="text-sm">{s.dept || 'Gen'}</span>
-                                        <span className="text-[10px] text-primary">{s.year ? `${s.year}${s.year === '1' ? 'st' : s.year === '2' ? 'nd' : s.year === '3' ? 'rd' : 'th'} Year` : '—'}</span>
-                                    </div>
-                                </td>
-                                <td className="px-8 py-6 text-right">
-                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => { setSelectedUser(s); setIsUserModalOpen(true); }} className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-primary transition-all border border-transparent hover:border-slate-100"><Edit3 size={18} /></button>
-                                        <button onClick={async () => { if (window.confirm('Delete student?')) { await AdminService.deleteUser(s.id); fetchData(); } }} className="p-2.5 hover:bg-white rounded-xl text-slate-400 hover:text-red-500 transition-all border border-transparent hover:border-slate-100"><Trash2 size={18} /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {loading && <div className="p-20 text-center animate-pulse text-slate-400 font-black uppercase tracking-widest">Hydrating Student Pipeline...</div>}
-                {!loading && filteredStudents.length === 0 && <div className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest">No matching students found</div>}
-            </div>
-
-            {totalPages > 1 && (
-                <div className="flex justify-between items-center bg-white border border-slate-200 p-8 rounded-[2.5rem] shadow-sm">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Page {currentPage} of {totalPages}</span>
-                    <div className="flex gap-2">
-                        <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-3 bg-slate-50 border border-slate-100 rounded-xl disabled:opacity-30 hover:bg-slate-100 transition-all"><ChevronLeft size={20} /></button>
-                        <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-3 bg-slate-50 border border-slate-100 rounded-xl disabled:opacity-30 hover:bg-slate-100 transition-all"><ChevronRight size={20} /></button>
+                <div className="card-main !p-10">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="text-left border-b border-[#f4f7fe]">
+                                    <th className="pb-4 text-[11px] font-black text-secondary tracking-widest uppercase px-4">Name</th>
+                                    <th className="pb-4 text-[11px] font-black text-secondary tracking-widest uppercase px-4">Dept</th>
+                                    <th className="pb-4 text-[11px] font-black text-secondary tracking-widest uppercase px-4">Year</th>
+                                    <th className="pb-4 text-right px-4"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#f4f7fe]">
+                                {paginatedStudents.map((s) => (
+                                    <tr key={s.id} className="group hover:bg-[#f4f7fe]/30 transition-colors">
+                                        <td className="py-4 px-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary">
+                                                    {s.displayName?.charAt(0)}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-bold text-[#2b3674]">{s.displayName}</span>
+                                                    <span className="text-[10px] font-bold text-secondary">{s.email}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-4 text-sm font-bold text-[#2b3674]">{s.dept || 'Gen'}</td>
+                                        <td className="py-4 px-4 text-sm font-bold text-primary">{s.year} Year</td>
+                                        <td className="py-4 px-4 text-right">
+                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => { setSelectedUser(s); setIsUserModalOpen(true); }} className="p-2 text-secondary hover:text-primary transition-colors">
+                                                    <Edit3 size={18} />
+                                                </button>
+                                                <button onClick={async () => { if (window.confirm('Delete student?')) { await AdminService.deleteUser(s.id); fetchData(); } }} className="p-2 text-secondary hover:text-red-500 transition-colors">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            )}
-        </div>
-    );
+            </div>
+        );
+    };
 
-    const renderLive = () => (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900">Broadcast Center</h1>
-                    <p className="text-sm text-slate-500">Schedule or start live sessions</p>
-                </div>
-                <button onClick={() => setIsLiveModalOpen(true)} className="px-6 py-3 bg-red-600 text-white font-black rounded-xl shadow-lg shadow-red-200 flex items-center gap-2">
-                    <Plus size={20} /> Host New Class
+    const renderSubjects = () => (
+        <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-extrabold text-dark tracking-tight">Assigned Subjects</h2>
+                <button onClick={() => { setSelectedSubject(null); setIsSubjectModalOpen(true); }} className="btn-primary">
+                    <Plus size={18} /> Create Subject
                 </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {liveClasses.map((item) => (
-                    <div key={item.id} className="bg-white border border-red-100 p-8 rounded-[2rem] shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-red-500" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {taughtSubjects.map(sub => (
+                    <div key={sub._id} className="card-main !p-10 flex flex-col group hover:border-primary/20 transition-all">
                         <div className="flex justify-between items-start mb-6">
-                            <span className="px-3 py-1 bg-red-500 text-white text-[10px] font-black rounded-full animate-pulse uppercase">Live Now</span>
-                            <button onClick={() => handleDeleteLive(item.id)} className="text-slate-200 hover:text-red-500"><Trash2 size={20} /></button>
+                            <div className="w-14 h-14 bg-[#f4f7fe] text-primary rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
+                                <BookOpen size={28} />
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => { setSelectedSubject(sub); setIsSubjectModalOpen(true); }} className="p-2 text-secondary hover:text-primary transition-colors"><Edit3 size={16} /></button>
+                                <button onClick={async () => { if (window.confirm('Delete subject?')) { await FacultyService.deleteSubject(sub._id); fetchData(); } }} className="p-2 text-secondary hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                            </div>
                         </div>
-                        <h4 className="text-xl font-black text-slate-900 mb-2">{item.title}</h4>
-                        <div className="flex items-center gap-4 text-xs font-bold text-slate-400 mb-6">
-                            <span className="flex items-center gap-1"><Clock size={14} /> {item.time}</span>
-                            <span className="flex items-center gap-1"><Video size={14} /> {item.platform}</span>
+                        <h3 className="text-xl font-extrabold text-[#2b3674] mb-2">{sub.title}</h3>
+                        <p className="text-xs font-semibold text-secondary mb-8 line-clamp-2 leading-relaxed">{sub.description || 'Professional course module for advanced learners.'}</p>
+
+                        <div className="mt-auto pt-6 border-t border-[#f4f7fe] flex justify-between items-center">
+                            <span className="text-[10px] font-black text-secondary tracking-widest uppercase">{sub.year}nd Year • {sub.dept}</span>
+                            <button className="px-4 py-2 bg-primary/10 text-primary font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all">Portal</button>
                         </div>
-                        <button className="w-full py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 transition-all">Enter Studio</button>
                     </div>
                 ))}
-            </div>
-            {liveClasses.length === 0 && <div className="p-20 text-center text-slate-400 font-black border border-dashed rounded-[3rem]">No active live sessions. Click 'Host' to start.</div>}
-        </div>
-    );
-
-    const renderAssessments = () => (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900">Assessment Engine</h1>
-                    <p className="text-sm text-slate-500">Create tests and check student knowledge</p>
-                </div>
-                <button className="px-6 py-3 bg-emerald-600 text-white font-black rounded-xl flex items-center gap-2">
-                    <Plus size={20} /> Create Test
-                </button>
-            </div>
-            <div className="p-20 text-center text-slate-400 font-bold border border-dashed rounded-[3rem]">
-                Assessment creation is being synchronized with the question bank.
             </div>
         </div>
     );
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'dashboard': return (
-                <div className="space-y-8 animate-in fade-in duration-500">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {stats.map((stat, i) => (
-                            <div key={i} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg} ${stat.color}`}><stat.icon size={24} /></div>
-                                    <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.change.startsWith('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-500'}`}>{stat.change}</div>
+            case 'dashboard':
+                return (
+                    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {stats.map((stat, i) => (
+                                <div key={i} className="card-main !p-8 flex items-center gap-6">
+                                    <div className="p-4 bg-[#f4f7fe] text-primary rounded-2xl">
+                                        <stat.icon size={26} style={{ color: stat.color }} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-black text-secondary tracking-widest uppercase mb-1">{stat.label}</p>
+                                        <h3 className="text-2xl font-extrabold text-[#2b3674] tracking-tight">{stat.value}</h3>
+                                        <div className="flex items-center gap-1 mt-1">
+                                            <TrendingUp size={12} className="text-green-500" />
+                                            <span className="text-[10px] font-bold text-green-500">{stat.change}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</div>
-                                <div className="text-sm font-medium text-slate-500">{stat.label}</div>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2 card-main !p-10">
+                                <h2 className="text-xl font-extrabold text-dark mb-8">Teaching Efficiency</h2>
+                                <div className="h-72 flex items-center justify-center bg-[#f4f7fe]/50 border-2 border-dashed border-[#f4f7fe] rounded-[2rem]">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Activity size={40} className="text-primary/20" />
+                                        <p className="text-secondary font-bold text-sm italic">Real-time engagement metrics loading...</p>
+                                    </div>
+                                </div>
                             </div>
-                        ))}
+                            <div className="card-main !p-10">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h2 className="text-xl font-extrabold text-dark">Top Achievers</h2>
+                                    <button className="text-[10px] font-black text-primary uppercase tracking-widest">Details</button>
+                                </div>
+                                <div className="space-y-6">
+                                    {[1, 2, 3, 4].map(i => (
+                                        <div key={i} className="flex items-center gap-4 group">
+                                            <div className="w-11 h-11 rounded-2xl bg-[#f4f7fe] flex items-center justify-center font-extrabold text-primary group-hover:bg-primary group-hover:text-white transition-all">SS</div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-[#2b3674]">Naveen Kumar</p>
+                                                <p className="text-[10px] font-black text-secondary uppercase tracking-tighter">CSE • 98% Readiness</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            );
+                );
             case 'students': return renderStudents();
-            case 'upload-videos': case 'upload-notes': return (
-                <div className="space-y-6 animate-in fade-in duration-500">
-                    <div className="flex justify-between items-center">
-                        <h1 className="text-2xl font-bold text-slate-900 capitalize">{activeTab.split('-')[1]} Library</h1>
-                        <button onClick={() => setIsModalOpen(true)} className="px-6 py-3 bg-primary text-white font-bold rounded-xl shadow-lg flex items-center gap-2"><Plus size={20} /> Upload New</button>
+            case 'subjects': return renderSubjects();
+            case 'upload-videos':
+            case 'upload-notes':
+                return (
+                    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-extrabold text-dark capitalize tracking-tight">{activeTab.split('-')[1]} Library</h2>
+                            <button onClick={() => { setSelectedContent(null); setIsModalOpen(true); }} className="btn-primary">
+                                <Upload size={18} /> Upload Asset
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {content.filter(item => activeTab.includes(item.type)).map(item => (
+                                <div key={item._id} className="card-main !p-0 overflow-hidden flex flex-col group hover:border-primary/20 transition-all">
+                                    <div className="aspect-video bg-[#f4f7fe] flex items-center justify-center relative">
+                                        {item.type === 'video' ? <PlayCircle size={48} className="text-primary/10 group-hover:text-primary/30 transition-all" /> : <Database size={48} className="text-primary/10 group-hover:text-primary/30 transition-all" />}
+                                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => { setSelectedContent(item); setIsModalOpen(true); }} className="p-2 bg-white rounded-lg shadow-sm text-secondary hover:text-primary"><Edit3 size={16} /></button>
+                                            <button onClick={async () => { if (window.confirm('Delete asset?')) { await FacultyService.deleteContent(item._id); fetchData(); } }} className="p-2 bg-white rounded-lg shadow-sm text-secondary hover:text-red-500"><Trash2 size={16} /></button>
+                                        </div>
+                                    </div>
+                                    <div className="p-8">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest rounded">{item.unit}</span>
+                                            <span className="text-[9px] font-bold text-secondary uppercase italic">Shared in {item.subjectId?.title || 'General'}</span>
+                                        </div>
+                                        <h4 className="font-extrabold text-[#2b3674] leading-tight mb-6 line-clamp-1">{item.title}</h4>
+                                        <a href={item.url} target="_blank" rel="noreferrer" className="w-full py-3 bg-[#f4f7fe] text-[#2b3674] text-[10px] font-black uppercase tracking-widest rounded-xl text-center block hover:bg-primary hover:text-white transition-all">View Asset</a>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {content.map((item) => (
-                            <div key={item.id} className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all relative">
-                                <button onClick={async () => { if (window.confirm('Delete?')) { await FacultyService.deleteContent(item.id); fetchData(); } }} className="absolute top-6 right-6 text-slate-200 hover:text-red-500"><Trash2 size={16} /></button>
-                                <div className="aspect-video bg-slate-900 rounded-2xl mb-4 flex items-center justify-center"><PlayCircle size={40} className="text-white/40" /></div>
-                                <h4 className="font-bold text-slate-900 mb-1">{item.title}</h4>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{item.subject}</p>
-                            </div>
-                        ))}
+                );
+            case 'live': return (
+                <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 text-center py-20 bg-white rounded-[3rem] border border-[#f4f7fe]">
+                    <div className="w-24 h-24 bg-[#f4f7fe] text-red-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+                        <Mic size={40} className="animate-pulse" />
                     </div>
-                    {content.length === 0 && <div className="p-20 text-center text-slate-400 font-black border border-dashed rounded-[3rem]">No content found.</div>}
+                    <h2 className="text-3xl font-extrabold text-dark tracking-tight">Faculty Studio</h2>
+                    <p className="text-secondary font-semibold max-w-sm mx-auto mb-10 leading-relaxed text-sm">Launch a high-definition broadcast and interact with your students in real-time. Features include screen-sharing and live moderated chat.</p>
+                    <div className="flex justify-center gap-4">
+                        <button onClick={() => setIsLiveModalOpen(true)} className="btn-primary !bg-red-500 !shadow-red-500/20 px-10">
+                            Launch Studio Now
+                        </button>
+                    </div>
                 </div>
             );
-            case 'live': return renderLive();
-            case 'assessments': return renderAssessments();
-            default: return <div>Select a module from the sidebar.</div>;
+            case 'assessments': return <ExamLibrary role="faculty" />;
+            case 'appearance': return <Appearance />;
+            default: return <div className="p-20 text-center text-secondary font-bold">Select a module from the menu.</div>;
         }
     };
 
     return (
-        <div className="pb-10 min-h-screen">
-            <header className="mb-10 flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Faculty Workspace <span className="text-primary">OS</span></h1>
-                    <p className="text-slate-500 font-medium mt-1 uppercase text-[10px] tracking-widest text-primary">{userData?.collegeName} • Command Center</p>
-                </div>
-            </header>
+        <div className="pb-10 min-h-full">
             {renderContent()}
-            <ContentModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveContent} type={activeTab === 'upload-videos' ? 'video' : 'note'} />
+
+            <UserModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} onSave={handleSaveStudent} editingUser={selectedUser} role="Student" />
+            <ContentModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveContent} type={activeTab === 'upload-videos' ? 'video' : 'note'} subjects={taughtSubjects} editingContent={selectedContent} />
+            <SubjectModal isOpen={isSubjectModalOpen} onClose={() => setIsSubjectModalOpen(false)} onSave={handleSaveSubject} batches={myBatches} editingSubject={selectedSubject} />
             <LiveModal isOpen={isLiveModalOpen} onClose={() => setIsLiveModalOpen(false)} onSave={handleSaveLive} />
-            <UserModal isOpen={isUserModalOpen} onClose={() => { setIsUserModalOpen(false); setSelectedUser(null); }} onSave={handleSaveStudent} editingUser={selectedUser} role="Student" />
         </div>
     );
 };

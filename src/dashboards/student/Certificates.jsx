@@ -46,7 +46,7 @@ const Certificates = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                     { label: 'Total Earned', value: certificates.length.toString(), icon: Trophy, color: 'text-orange-600', bg: 'bg-orange-50' },
-                    { label: 'Verified Skills', value: '12', icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                    { label: 'Verified Skills', value: '12', icon: ShieldCheck, color: 'text-primary', bg: 'bg-primary/10' },
                     { label: 'Course Badges', value: '08', icon: GraduationCap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
                 ].map((stat, i) => (
                     <div key={i} className="bg-white border border-slate-200 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex items-center gap-6">

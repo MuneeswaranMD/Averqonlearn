@@ -13,7 +13,7 @@ const Courses = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center mb-16"
                 >
-                    <span className="inline-block py-1.5 px-4 rounded-full bg-blue-50 text-blue-600 font-bold text-xs uppercase tracking-widest mb-6">
+                    <span className="inline-block py-1.5 px-4 rounded-full bg-primary/10 text-primary font-bold text-xs uppercase tracking-widest mb-6">
                         Premium Curriculum
                     </span>
                     <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">
@@ -42,7 +42,7 @@ const Courses = () => {
                         { t: "Cloud Architecture (AWS)", c: "Cloud", i: Clock, color: "text-orange-500", bg: "bg-orange-50" },
                         { t: "Ethical Hacking & Security", c: "Security", i: Shield, color: "text-red-500", bg: "bg-red-50" },
                         { t: "UI/UX & Product Design", c: "Design", i: Code, color: "text-emerald-500", bg: "bg-emerald-50" },
-                        { t: "Mobile App Development", c: "Mobile", i: Code, color: "text-indigo-500", bg: "bg-indigo-50" },
+                        { t: "Mobile App Development", c: "Mobile", i: Code, color: "text-primary", bg: "bg-primary/10" },
                     ].map((item, i) => (
                         <div key={i} className="bg-white border border-slate-200 rounded-3xl p-8 hover:shadow-xl hover:shadow-slate-200/50 transition-all group">
                             <div className={`w-14 h-14 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center mb-6`}>

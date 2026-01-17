@@ -5,9 +5,9 @@ import { StudentService } from '../../services/studentService';
 import { AIService } from '../../services/aiService';
 
 const AITutor = () => {
-    const { collegeId, user } = useAuth();
+    const { collegeId, userData, user } = useAuth();
     const [messages, setMessages] = useState([
-        { role: 'assistant', text: "Hello! I'm your Averqon AI Academic Tutor. Select a subject to start a context-aware session, or just ask me anything!" },
+        { role: 'assistant', text: "Salutations! I'm your Averqon AI Academic Kernel. I've indexed your current learning clusters. Select a subject for context-aware synergy, or query me directly!" },
     ]);
     const [input, setInput] = useState('');
     const [subjects, setSubjects] = useState([]);
@@ -36,94 +36,104 @@ const AITutor = () => {
         setLoading(true);
 
         try {
-            const response = await AIService.askTutor(collegeId, selectedSub?.id, userMsg);
+            // Format history for Gemini (user/model roles)
+            const chatHistory = messages
+                .filter(m => m.role !== 'system')
+                .map(m => ({
+                    role: m.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: m.text }]
+                }));
+
+            const response = await AIService.askTutor(collegeId, selectedSub?.id || selectedSub?._id, userMsg, chatHistory);
 
             const aiMsg = {
                 role: 'assistant',
                 text: response.text,
                 isSmart: !!response.context,
                 action: response.suggestedAction,
-                context: response.context
+                context: response.context,
+                source: response.source
             };
 
             setMessages(prev => [...prev, aiMsg]);
 
             if (response.suggestedAction === 'GENERATE_QUIZ') {
-                const mcqs = await AIService.generateMCQs(response.context);
+                const mcqs = await AIService.generateMCQs(selectedSub?.id || selectedSub?._id, userMsg);
                 setMessages(prev => [...prev, {
                     role: 'assistant',
-                    text: 'I have prepared a quick practice quiz for you based on this topic. Would you like to try it now?',
+                    text: 'Neural simulation complete. I have synthesized a practice assessment based on this cluster. Analyze now?',
                     quiz: mcqs
                 }]);
             }
         } catch (err) {
-            setMessages(prev => [...prev, { role: 'assistant', text: "Connection to AI Cluster interrupted." }]);
+            setMessages(prev => [...prev, { role: 'assistant', text: "Kernel synchronization lost. Re-establishing link..." }]);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="h-[calc(100vh-140px)] flex flex-col animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row gap-6 h-full">
+        <div className="h-[calc(100vh-140px)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 font-sans">
+            <div className="flex flex-col md:flex-row gap-8 h-full">
                 {/* Chat Area */}
-                <div className="flex-1 bg-white border border-slate-200 rounded-[2.5rem] flex flex-col shadow-sm overflow-hidden">
+                <div className="flex-1 card-main flex flex-col !p-0 overflow-hidden">
                     {/* Header */}
-                    <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
-                                <Bot size={28} />
+                    <div className="p-6 border-b border-[#f4f7fe] flex items-center justify-between bg-white shrink-0 relative z-10">
+                        <div className="flex items-center gap-5">
+                            <div className="w-14 h-14 rounded-2xl bg-[#2b3674] text-white flex items-center justify-center shadow-xl shadow-[#2b3674]/20 relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-gradient-to-tr from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <Bot size={28} className="relative z-10" />
                             </div>
                             <div>
-                                <h2 className="font-black text-slate-900 tracking-tight">Academic Genius OS</h2>
+                                <h2 className="text-xl font-black text-[#2b3674] tracking-tight">Academic Kernel <span className="text-primary italic">OS</span></h2>
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Neural Cluster Active</p>
+                                    <p className="text-[10px] text-secondary font-black uppercase tracking-[0.2em]">Neural Link: Active</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="hidden md:flex items-center gap-4">
                             <select
-                                onChange={(e) => setSelectedSub(subjects.find(s => s.id === e.target.value))}
-                                className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 outline-none focus:border-primary transition-all"
+                                onChange={(e) => setSelectedSub(subjects.find(s => (s.id || s._id) === e.target.value))}
+                                className="bg-[#f4f7fe] border border-transparent rounded-[1.25rem] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-[#2b3674] outline-none focus:bg-white focus:border-primary/30 transition-all shadow-sm cursor-pointer"
                             >
-                                <option value="">General Knowledge</option>
-                                {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                <option value="">General Intelligence</option>
+                                {subjects.map(s => <option key={s.id || s._id} value={s.id || s._id}>{s.name || s.title}</option>)}
                             </select>
                         </div>
                     </div>
 
                     {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/30">
+                    <div className="flex-1 overflow-y-auto p-10 space-y-8 bg-[#f4f7fe]/20 custom-scrollbar">
                         {messages.map((msg, i) => (
                             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                                    <div className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center font-bold text-xs shadow-sm ${msg.role === 'user' ? 'bg-primary text-white' : 'bg-white border border-slate-100 text-slate-400'}`}>
-                                        {msg.role === 'user' ? 'YOU' : <Bot size={20} />}
+                                <div className={`max-w-[80%] flex gap-5 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                                    <div className={`w-10 h-10 rounded-[1.25rem] shrink-0 flex items-center justify-center font-black text-[10px] shadow-sm transform transition-transform hover:scale-110 ${msg.role === 'user' ? 'bg-[#2b3674] text-white' : 'bg-white border border-[#f4f7fe] text-primary'}`}>
+                                        {msg.role === 'user' ? 'USER' : <Bot size={20} />}
                                     </div>
-                                    <div className={`p-5 rounded-[1.5rem] text-sm leading-relaxed relative ${msg.role === 'user' ? 'bg-primary text-white shadow-xl shadow-primary/10' : 'bg-white border border-slate-100 text-slate-700 shadow-sm'}`}>
+                                    <div className={`p-6 rounded-[2rem] text-sm font-semibold leading-relaxed relative ${msg.role === 'user' ? 'bg-[#2b3674] text-white shadow-xl shadow-[#2b3674]/10 rounded-tr-none' : 'bg-white border border-[#f4f7fe] text-[#2b3674] shadow-sm rounded-tl-none'}`}>
                                         {msg.isSmart && (
-                                            <div className="absolute -top-3 left-6 px-3 py-1 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full flex items-center gap-1 shadow-lg">
-                                                <Sparkles size={10} /> Context-Aware
+                                            <div className="absolute -top-4 left-6 px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full flex items-center gap-2 shadow-lg animate-bounce-subtle">
+                                                <Sparkles size={11} /> Context-Aware
                                             </div>
                                         )}
                                         {msg.text}
 
                                         {msg.quiz && (
-                                            <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                                            <div className="mt-6 p-6 bg-[#f4f7fe]/50 rounded-[1.5rem] border border-[#f4f7fe] space-y-6">
                                                 {msg.quiz.map((q, qIdx) => (
-                                                    <div key={qIdx} className="space-y-2">
-                                                        <p className="font-bold text-slate-900">{q.question}</p>
-                                                        <div className="grid grid-cols-1 gap-2">
+                                                    <div key={qIdx} className="space-y-3">
+                                                        <p className="font-extrabold text-[#2b3674] text-xs uppercase tracking-tight">{q.question}</p>
+                                                        <div className="grid grid-cols-1 gap-3">
                                                             {q.options.map((opt, oIdx) => (
-                                                                <button key={oIdx} className="text-left px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold hover:border-primary transition-all">
+                                                                <button key={oIdx} className="text-left px-5 py-3 bg-white border border-transparent rounded-xl text-xs font-bold text-secondary hover:border-primary/30 hover:text-primary transition-all shadow-sm">
                                                                     {opt}
                                                                 </button>
                                                             ))}
                                                         </div>
                                                     </div>
                                                 ))}
-                                                <button className="w-full py-2 bg-primary text-white font-black rounded-xl text-[10px] uppercase tracking-widest">Submit Answers</button>
+                                                <button className="btn-primary !w-full !py-3 !text-[10px] !font-black uppercase tracking-[0.2em] shadow-lg">Finalize Simulation</button>
                                             </div>
                                         )}
                                     </div>
@@ -132,8 +142,8 @@ const AITutor = () => {
                         ))}
                         {loading && (
                             <div className="flex justify-start">
-                                <div className="flex gap-4 items-center bg-white border border-slate-100 p-4 rounded-2xl shadow-sm text-slate-400 text-xs font-bold italic">
-                                    <Loader2 className="animate-spin" size={16} /> Thinking via academic context...
+                                <div className="flex gap-5 items-center bg-white border border-[#f4f7fe] p-5 rounded-[1.5rem] shadow-sm text-secondary text-xs font-black uppercase tracking-widest italic animate-pulse">
+                                    <Loader2 className="animate-spin text-primary" size={18} /> Synchronizing Neural Nodes...
                                 </div>
                             </div>
                         )}
@@ -141,20 +151,20 @@ const AITutor = () => {
                     </div>
 
                     {/* Input */}
-                    <div className="p-6 border-t border-slate-100 bg-white">
-                        <div className="relative flex items-center gap-4">
+                    <div className="p-8 bg-white border-t border-[#f4f7fe] relative">
+                        <div className="relative flex items-center">
                             <input
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                placeholder={selectedSub ? `Ask about ${selectedSub.name}...` : "Ask a general academic doubt..."}
-                                className="flex-1 bg-slate-50 border border-slate-100 text-slate-900 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-primary transition-all pr-16 text-sm font-medium shadow-inner"
+                                placeholder={selectedSub ? `Query cluster: ${selectedSub.name || selectedSub.title}...` : "Initiate a general academic query..."}
+                                className="flex-1 bg-[#f4f7fe] border border-transparent text-[#2b3674] rounded-[1.5rem] px-8 py-5 outline-none focus:bg-white focus:border-primary/20 transition-all pr-20 text-sm font-bold shadow-inner"
                             />
                             <button
                                 onClick={handleSend}
-                                disabled={loading}
-                                className="absolute right-2 p-3 bg-slate-900 text-white rounded-xl shadow-xl hover:bg-primary transition-all active:scale-95 disabled:opacity-50"
+                                disabled={loading || !input.trim()}
+                                className="absolute right-3 p-4 bg-[#2b3674] text-white rounded-[1.25rem] shadow-xl shadow-[#2b3674]/20 hover:bg-primary transition-all active:scale-95 disabled:opacity-30 disabled:grayscale transition-all"
                             >
                                 <Send size={20} />
                             </button>
@@ -163,42 +173,47 @@ const AITutor = () => {
                 </div>
 
                 {/* Sidebar */}
-                <div className="w-full md:w-80 space-y-6 shrink-0">
-                    <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-indigo-200 relative overflow-hidden group">
-                        <Zap className="absolute top-4 right-4 text-white/5 group-hover:scale-125 transition-transform duration-500" size={80} />
-                        <h3 className="text-xl font-black mb-2 flex items-center gap-2 uppercase tracking-tighter">
-                            <Sparkles size={24} className="text-emerald-400" /> Neuron Cluster
+                <div className="w-full md:w-80 space-y-8 shrink-0">
+                    <div className="card-main !bg-[#2b3674] !p-10 text-white relative overflow-hidden group border-none">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-bl-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
+                        <Zap className="absolute -bottom-8 -left-8 text-white/[0.03] w-48 h-48" size={80} />
+
+                        <h3 className="text-xl font-black mb-1 flex items-center gap-3 tracking-tight">
+                            <Sparkles size={24} className="text-primary italic" /> Neuron 01
                         </h3>
-                        <p className="text-indigo-100/70 text-xs font-bold leading-relaxed mb-8 uppercase tracking-widest">
-                            Multi-Tenant Identity: <br />{userData?.collegeName || 'Averqon Global'}
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-10">Cluster Identity</p>
+
+                        <p className="text-white/80 text-[10px] font-black leading-relaxed mb-10 uppercase tracking-[0.1em]">
+                            Source: <br />{userData?.collegeName || 'Averqon Global Kernel'}
                         </p>
-                        <div className="space-y-3">
-                            <div className="flex justify-between text-[10px] font-black uppercase">
+
+                        <div className="space-y-4 pt-6 border-t border-white/10">
+                            <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-primary">
                                 <span>Context Sync</span>
                                 <span>100%</span>
                             </div>
-                            <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-400 rounded-full w-full shadow-[0_0_10px_#10b981]" />
+                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden shadow-inner">
+                                <div className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full w-full shadow-[0_0_15px_rgba(0,100,255,0.5)]" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm">
-                        <h3 className="font-black text-slate-900 mb-6 flex items-center gap-2 uppercase text-xs tracking-widest border-b border-slate-50 pb-4">
-                            <BrainCircuit size={18} className="text-primary" /> Active Subjects
+                    <div className="card-main !p-10">
+                        <h3 className="text-[10px] font-black text-[#2b3674] mb-8 flex items-center gap-3 uppercase tracking-[0.2em]">
+                            <BrainCircuit size={18} className="text-primary" /> Active Clusters
                         </h3>
                         <div className="space-y-3">
                             {subjects.map((sub) => (
                                 <button
-                                    key={sub.id}
+                                    key={sub.id || sub._id}
                                     onClick={() => setSelectedSub(sub)}
-                                    className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center justify-between group ${selectedSub?.id === sub.id ? 'bg-primary/5 border-primary/20' : 'bg-slate-50 border-slate-100 hover:bg-white'}`}
+                                    className={`w-full text-left p-5 rounded-2xl border transition-all flex items-center justify-between group ${selectedSub?.id === (sub.id || sub._id) ? 'bg-primary/5 border-primary/20' : 'bg-[#f4f7fe]/50 border-transparent hover:bg-white hover:border-[#f4f7fe]'}`}
                                 >
                                     <div>
-                                        <p className={`text-xs font-black ${selectedSub?.id === sub.id ? 'text-primary' : 'text-slate-600'}`}>{sub.name}</p>
-                                        <p className="text-[10px] font-bold text-slate-400">{sub.code}</p>
+                                        <p className={`text-xs font-black ${selectedSub?.id === (sub.id || sub._id) ? 'text-primary' : 'text-[#2b3674]'}`}>{sub.name || sub.title}</p>
+                                        <p className="text-[9px] font-black text-secondary uppercase tracking-widest mt-1">{sub.code || 'SYS-NODE'}</p>
                                     </div>
-                                    <ChevronRight size={16} className={`${selectedSub?.id === sub.id ? 'text-primary' : 'text-slate-300'} group-hover:translate-x-1 transition-transform`} />
+                                    <ChevronRight size={16} className={`${selectedSub?.id === (sub.id || sub._id) ? 'text-primary' : 'text-secondary'} group-hover:translate-x-1 transition-transform`} />
                                 </button>
                             ))}
                         </div>

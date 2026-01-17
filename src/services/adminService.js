@@ -45,5 +45,21 @@ export const AdminService = {
     addDepartment: async (deptData) => {
         const response = await api.post('/departments', deptData);
         return response.data;
+    },
+
+    syncDepartments: async () => {
+        const response = await api.post('/departments/sync');
+        return response.data;
+    },
+
+    // Settings
+    getSettings: async () => {
+        const response = await api.get('/colleges/me');
+        return response.data;
+    },
+
+    updateSettings: async (settingsData) => {
+        const response = await api.put('/colleges/me', settingsData);
+        return response.data;
     }
 };

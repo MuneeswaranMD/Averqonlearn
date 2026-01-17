@@ -1,53 +1,35 @@
-import { db } from '../firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import api from './api';
 
 export const AIService = {
-    askTutor: async (collegeId, subjectId, userMessage) => {
+    askTutor: async (collegeId, subjectId, question, history = []) => {
         try {
-            // 1. Fetch relevant context from Firestore (Notes & Videos)
-            const q = query(
-                collection(db, 'content'),
-                where('collegeId', '==', collegeId)
-            );
-            
-            const snapshot = await getDocs(q);
-            const contextItems = snapshot.docs.map(doc => doc.data());
-
-            // 2. Simple "Reasoning" Engine (Keyword Matching)
-            const message = userMessage.toLowerCase();
-            let relevantContext = contextItems.filter(item => 
-                item.description?.toLowerCase().includes(message) ||
-                item.title?.toLowerCase().includes(message) ||
-                (subjectId && item.subjectId === subjectId)
-            );
-
-            // 3. Generate Simulated AI Response
-            if (relevantContext.length > 0) {
-                const bestMatch = relevantContext[0];
-                return {
-                    text: `Based on your course materials for "${bestMatch.title}", here's what I found: ${bestMatch.description}. This is covered in ${bestMatch.unit}.`,
-                    context: bestMatch,
-                    suggestedAction: 'GENERATE_QUIZ'
-                };
-            }
+            const response = await api.post('/ai/ask', {
+                collegeId,
+                subjectId,
+                question,
+                history
+            });
 
             return {
-                text: "I couldn't find specific matches in your uploaded notes for that topic. However, generally speaking, most engineering curriculums treat this as a core concept. Would you like me to explain it based on standard academic patterns?",
-                context: null
+                text: response.data.answer,
+                context: response.data.contextUsed,
+                suggestedAction: response.data.suggestedAction,
+                source: response.data.source
             };
-
         } catch (error) {
             console.error("AI Tutor Error:", error);
-            return { text: "I'm having trouble accessing the academic cluster right now. Please try again in a moment." };
+            throw error;
         }
     },
 
-    generateMCQs: async (context) => {
-        // Mock MCQ generation based on context
-        return [
-            { question: `Which unit covers ${context?.title}?`, options: ['Unit 1', 'Unit 2', 'Unit 3', 'Unit 4'], correct: 0 },
-            { question: `What is a primary focus of this topic?`, options: ['Efficiency', 'Hardware', 'Networking', 'None'], correct: 0 }
-        ];
+    generateMCQs: async (subjectId, topic) => {
+        try {
+            const response = await api.post('/ai/generate-quiz', { subjectId, topic });
+            return response.data;
+        } catch (error) {
+            console.error("Quiz Gen Error:", error);
+            return [];
+        }
     },
 
     summarize: async (text) => {

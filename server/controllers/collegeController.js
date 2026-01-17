@@ -57,6 +57,12 @@ const updateCollege = async (req, res) => {
         college.name = req.body.name || college.name;
         college.location = req.body.location || college.location;
         college.status = req.body.status || college.status;
+        if (req.body.commonPassword) {
+            college.commonPassword = req.body.commonPassword;
+        }
+        if (req.body.defaultThemeId) {
+            college.defaultThemeId = req.body.defaultThemeId;
+        }
 
         const updatedCollege = await college.save();
         res.json(updatedCollege);
@@ -81,9 +87,63 @@ const deleteCollege = async (req, res) => {
     }
 };
 
+// @desc    Update college settings (College Admin)
+// @route   PUT /api/colleges/me
+// @access  Private/CollegeAdmin
+const updateMyCollege = async (req, res) => {
+    try {
+        if (!req.user.collegeId) {
+            return res.status(400).json({ message: 'User is not associated with a college' });
+        }
+
+        const college = await College.findById(req.user.collegeId);
+
+        if (college) {
+            // Allow updating common settings
+            if (req.body.commonPassword) {
+                college.commonPassword = req.body.commonPassword;
+            }
+            if (req.body.commonFacultyPassword) {
+                college.commonFacultyPassword = req.body.commonFacultyPassword;
+            }
+            if (req.body.commonPlacementPassword) {
+                college.commonPlacementPassword = req.body.commonPlacementPassword;
+            }
+            if (req.body.defaultThemeId) {
+                college.defaultThemeId = req.body.defaultThemeId;
+            }
+            // Can add more fields here if needed (e.g. logo)
+            
+            const updatedCollege = await college.save();
+            res.json(updatedCollege);
+        } else {
+            res.status(404).json({ message: 'College not found' });
+        }
+    } catch (error) {
+        console.error("Error updating college settings:", error);
+        res.status(500).json({ message: 'Server Error: ' + error.message });
+    }
+};
+
+// @desc    Get my college info
+// @route   GET /api/colleges/me
+// @access  Private/Admin
+const getMyCollege = async (req, res) => {
+    if (!req.user.collegeId) {
+        return res.status(400).json({ message: 'User is not associated with a college' });
+    }
+    const college = await College.findById(req.user.collegeId);
+    if (!college) {
+        return res.status(404).json({ message: 'College not found' });
+    }
+    res.json(college);
+};
+
 module.exports = {
     getColleges,
     registerCollege,
     updateCollege,
-    deleteCollege
+    deleteCollege,
+    updateMyCollege,
+    getMyCollege
 };
